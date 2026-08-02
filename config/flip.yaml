@@ -1,0 +1,46 @@
+# Configuracao do garimpo semanal — flip-bot
+# Rota da Luciana: storage em Mississauga, viagem semanal p/ Niagara.
+
+search:
+  # Centro do raio de busca: Mississauga (perto do storage)
+  zip: "L4W 1S9"
+  miles: 25              # raio de retirada aceitavel a partir do zip
+  state: "ON"            # SIGLA (a API nao aceita "Ontario" por extenso)
+  country: "Canada"
+
+  # Palavras-chave de tiquete alto que giram bem no Facebook Marketplace de
+  # Niagara. Ajustar conforme o ledger de vendas ensinar o que gira.
+  keywords:
+    - milwaukee
+    - dewalt
+    - makita
+    - dyson
+    - kitchenaid
+    - "air fryer"
+    - "pressure washer"
+    - generator
+    - "shop vac"
+    - lego
+
+costs:
+  buyer_premium_default: 0.16   # usado quando o leiloeiro nao informa (14-17% tipico)
+  hst: 0.13                     # Ontario
+  # Regra de ouro: so vale se revender por >= resale_multiple x custo total
+  resale_multiple: 2.0
+
+report:
+  # Lotes com lance atual acima disso nem entram no relatorio (foco em barganha)
+  max_current_bid: 150
+  # So listar lotes que fecham nos proximos N dias (casar com o dia da viagem)
+  closing_within_days: 7
+  output_dir: reports
+
+watcher:
+  # Cadencia adaptativa de polling por tempo restante (segundos)
+  poll_far: 300        # > 1 h para o fim
+  poll_near: 60        # < 1 h
+  poll_final: 15       # < 10 min — janela do lance
+  # Alerta "HORA DO LANCE" quando faltar menos que isso E highBid <= max_bid
+  bid_window_seconds: 300
+  # Notificacao macOS + som
+  notify: true

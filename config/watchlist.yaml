@@ -1,0 +1,12 @@
+# Lotes sob vigilancia do watcher (scripts/watch.py).
+# max_bid = teto do LANCE (o custo real sera ~1.30x isso com premio+HST).
+# O watcher avisa o momento de dar o lance — o lance em si e SEMPRE manual.
+#
+# Exemplo:
+# lots:
+#   - id: 123456789
+#     nome: "Milwaukee M18 combo"
+#     max_bid: 120
+#     resale_estimate: 350   # opcional, so p/ constar no alerta
+
+lots: []
