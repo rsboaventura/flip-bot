@@ -18,7 +18,7 @@ import argparse
 import json
 import smtplib
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -52,6 +52,39 @@ def _title_matches(keyword: str, lead: str) -> bool:
     keyword aparecem inteiras no titulo."""
     return all(re.search(rf"\b{re.escape(t)}s?\b", lead, re.IGNORECASE)
                for t in keyword.split())
+
+
+DIAS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
+
+
+def next_trips(cfg_trips: dict, now: datetime | None = None, count: int = 3) -> list[datetime]:
+    """Proximas viagens da Luciana (ter/sex as 10h por default)."""
+    now = now or datetime.now()
+    weekdays = cfg_trips.get("weekdays", [1, 4])
+    hour = cfg_trips.get("hour", 10)
+    trips = []
+    d = now
+    while len(trips) < count:
+        d += timedelta(days=1)
+        if d.weekday() in weekdays:
+            trips.append(d.replace(hour=hour, minute=0, second=0, microsecond=0))
+    return trips
+
+
+def annotate_trips(rows: list[dict], cfg_trips: dict) -> None:
+    """Marca em cada lote a viagem em que a retirada encaixa (row['janela']).
+    Lote que fecha sem folga ate a ULTIMA viagem do horizonte fica sem janela
+    — continua no relatorio, mas marcado 'fora da rota desta semana'."""
+    lead = timedelta(hours=cfg_trips.get("lead_hours", 15))
+    trips = next_trips(cfg_trips)
+    now = datetime.now()
+    for r in rows:
+        end = now + timedelta(seconds=r.get("time_left_s") or 0)
+        r["janela"] = None
+        for t in trips:
+            if end <= t - lead:
+                r["janela"] = f"{DIAS[t.weekday()]} {t:%d/%m}"
+                break
 
 
 def annotate_profit(rows: list[dict], comps: list[dict], haircut: float,
@@ -136,6 +169,14 @@ def main() -> None:
     annotate_profit(rows, comps, cfg["report"].get("haircut", 0.15),
                     hst=cfg["costs"].get("hst", 0.13),
                     profit_multiple=cfg["costs"].get("resale_multiple", 2.0))
+    annotate_trips(rows, cfg.get("trips", {}))
+
+    tri_cfg = cfg.get("triage", {})
+    if tri_cfg.get("enabled", True):
+        print("Triagem IA (real/fake, estado)...", file=sys.stderr)
+        from src.triage import triage_top
+        n = triage_top(rows, tri_cfg.get("top_n", 30))
+        print(f"  {n} lotes avaliados pela IA", file=sys.stderr)
 
     html = render_email_html(cfg, rows, shopping_rows, comps=comps)
 

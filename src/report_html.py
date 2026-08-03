@@ -82,11 +82,27 @@ def render_email_html(cfg: dict, rows: list[dict],
                 else:
                     teto_cell = (f'<td style="{TD}text-align:right;">'
                                  f'<b>${teto:.0f}</b></td>')
+            extras = []
+            if r.get("janela"):
+                extras.append(f'<span style="color:{VERDE};font-weight:700;">🚗 retira {r["janela"]}</span>')
+            elif "janela" in r:
+                extras.append(f'<span style="color:{MUTED};">fora das viagens desta semana</span>')
+            tri = r.get("triage")
+            if tri:
+                if r.get("est_profit") is None:
+                    extras.append(f'<span style="color:{VERMELHO};font-weight:700;">🤖 reprovado: {tri.get("motivo", "")}</span>')
+                else:
+                    extras.append(
+                        f'<span style="color:{AZUL};">🤖 nota {tri.get("nota", "?")} · '
+                        f'{tri.get("condicao", "?")} · fake {tri.get("risco_fake", "?")} · '
+                        f'{tri.get("motivo", "")}</span>')
+            extra_html = ("<br><span style=\"font-size:11px;\">"
+                          + " &nbsp;·&nbsp; ".join(extras) + "</span>") if extras else ""
             trs.append(f"""
 <tr style="{_row_style(i)}">
   <td style="{TD}white-space:nowrap;"><b>{_fmt_time(r["time_left_s"])}</b></td>
   <td style="{TD}"><a href="{r["url"]}" style="color:{AZUL};text-decoration:none;"><b>{lead}</b></a>
-      <br><span style="color:{MUTED};font-size:11px;">{r["keyword"]} · {r["city"]} · {r["bid_count"]} lances</span></td>
+      <br><span style="color:{MUTED};font-size:11px;">{r["keyword"]} · {r["city"]} · {r["bid_count"]} lances</span>{extra_html}</td>
   <td style="{TD}text-align:right;">${r["high_bid"]:.0f}</td>
   <td style="{TD}text-align:right;"><b>${r["all_in_next"]:.0f}</b></td>
   {teto_cell}
@@ -131,6 +147,48 @@ def render_email_html(cfg: dict, rows: list[dict],
   </tr>
   {"".join(trs)}
 </table>"""
+
+    def insights_table(rs: list[dict]) -> str:
+        """Insights p/ investimento: onde esta o dinheiro nesta rodada."""
+        by_kw: dict[str, dict] = {}
+        for r in rs:
+            if r.get("est_profit") is None:
+                continue
+            d = by_kw.setdefault(r["keyword"], {"n": 0, "best": 0.0, "teto": 0.0})
+            d["n"] += 1
+            if r["est_profit"] > d["best"]:
+                d["best"] = r["est_profit"]
+                d["teto"] = r.get("max_bid_2x") or 0
+        if not by_kw:
+            return ""
+        top = sorted(by_kw.items(), key=lambda kv: -kv[1]["best"])[:8]
+        budget = sum(d["teto"] for _, d in top[:5])
+        trs = []
+        for i, (kw, d) in enumerate(top):
+            trs.append(f"""
+<tr style="{_row_style(i)}">
+  <td style="{TD}"><b>{kw}</b></td>
+  <td style="{TD}text-align:right;">{d["n"]}</td>
+  <td style="{TD}text-align:right;color:{VERDE};"><b>${d["best"]:.0f}</b></td>
+  <td style="{TD}text-align:right;">${d["teto"]:.0f}</td>
+</tr>""")
+        return f"""
+  <div style="background:#ffffff;padding:0 24px 20px;">
+    <div style="font-size:16px;font-weight:700;color:{INK};margin:0 0 10px;">📈 Insights de investimento desta rodada</div>
+<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border-radius:10px;overflow:hidden;">
+  <tr style="background:{LARANJA};">
+    <th style="{TH}">Categoria</th>
+    <th style="{TH}text-align:right;">Lotes bons</th>
+    <th style="{TH}text-align:right;">Melhor lucro</th>
+    <th style="{TH}text-align:right;">Teto do melhor</th>
+  </tr>
+  {"".join(trs)}
+</table>
+    <p style="font-size:12px;color:{MUTED};margin:10px 0 0;">Se ganhar o melhor lote das
+    5 primeiras categorias no teto, o investimento seria ~<b>${budget:.0f}</b> —
+    com lucro potencial de 100%+ em cada. Registrar cada compra/venda em
+    <code>data/ledger.csv</code> para os insights ficarem cada vez melhores.</p>
+  </div>"""
 
     def comps_table(cs: list[dict] | None) -> str:
         if not cs:
@@ -197,6 +255,7 @@ def render_email_html(cfg: dict, rows: list[dict],
     <p style="font-size:12px;color:{MUTED};margin:10px 0 0;">⚠️ Lance longe do fim ainda sobe — o custo mostrado é o de agora.
     Conferir se é o produto (não capa/peça) e NEW/SEALED vs USED.</p>
   </div>
+{insights_table(rows)}
 {comps_table(comps)}
   <div style="background:#10233f;border-radius:0 0 14px 14px;padding:16px 24px;color:#c9d8ee;font-size:12px;">
     <b style="color:#fff;">Como agir:</b> escolher lotes → definir teto no <code>watchlist.yaml</code> →

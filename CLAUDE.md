@@ -36,12 +36,18 @@ Família: Rogério (dev/lances), Luciana (retirada/logística).
 | `src/comps.py` | Comps de revenda via Kijiji público (região Niagara, cards server-rendered por data-testid). FB Marketplace = login = fora dos limites. Preço PEDIDO ≠ vendido: ~15% de choro. Margens variam brutalmente por categoria (robot vacuum +3300%, dewalt leaf blower −31% em 02/08) — comps antes de todo lance |
 | `scripts/scan.py` | Garimpo semanal por keyword no raio de Mississauga → relatório md em `reports/` |
 | `scripts/watch.py` | Watcher dinâmico: polling adaptativo da watchlist, notificação macOS "HORA DO LANCE" / "ESTOUROU O TETO" |
-| `config/flip.yaml` | Raio, keywords, custos (prêmio/HST/múltiplo), cadência do watcher, `shopping:` lista de compras da casa (keyword + preço Amazon → seção "economia doméstica" no relatório) |
+| `src/triage.py` | Triagem IA (gpt-5.4-mini + foto, chave OPENAI do .env.local do 3dprint-bot em fallback): real/fake, condição, usável, nota. Roda só no top-N por lucro; reprovado perde a estimativa e desce. Custo ~centavos |
+| `config/flip.yaml` | Zonas, keywords, custos, `trips:` (viagens da Luciana TER/SEX 10h, lead 15h — só lote que fecha a tempo ganha janela), `triage:`, `shopping:` lista da casa |
+| `data/ledger.csv` | Registro de compras/vendas (alimenta os insights; preencher a cada compra e venda) |
 | `config/watchlist.yaml` | Lotes vigiados: id + max_bid (+ resale_estimate) |
 
 ## Fluxo semanal
 
-1. Qui/sex: `scan.py` → relatório → Rogério escolhe lotes e define `max_bid`.
+Viagens da Luciana a Mississauga: **TERÇAS e SEXTAS** (config `trips`). O
+relatório marca cada lote com a janela de retirada (🚗 ter/sex dd/mm) e a
+triagem IA aprova/reprova antes do humano olhar.
+
+1. Dom/qua: `email_report.py` → relatório ranqueado → Rogério escolhe lotes e define `max_bid`.
 2. Preencher `watchlist.yaml`, rodar `watch.py` (fica aberto num terminal).
 3. Alerta "HORA DO LANCE" → abrir o link e dar o lance À MÃO.
 4. Ganhou → Luciana retira na ida ao storage → anunciar no Marketplace.

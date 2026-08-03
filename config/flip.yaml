@@ -111,6 +111,19 @@ costs:
   # Regra de ouro: so vale se revender por >= resale_multiple x custo total
   resale_multiple: 2.0
 
+# Viagens da Luciana a Mississauga: TERCAS e SEXTAS. So vale lote que fecha
+# com folga antes da viagem (lead_hours) p/ pagar e agendar retirada.
+trips:
+  weekdays: [1, 4]      # 0=seg ... 1=TER, 4=SEX
+  hour: 10              # hora que ela sai/passa nos leiloeiros
+  lead_hours: 15        # lote deve fechar >= 15h antes da viagem
+
+# Triagem por IA (gpt-5.4-mini + foto): real/fake, estado, usavel.
+# Roda so nos top-N por lucro — custo de centavos.
+triage:
+  enabled: true
+  top_n: 30
+
 report:
   # Lotes com lance atual acima disso nem entram no relatorio (foco em barganha)
   max_current_bid: 100

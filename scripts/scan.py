@@ -80,11 +80,14 @@ def scan(cfg: dict, keywords: list[str], max_bid_filter: float) -> list[dict]:
             auc = lot.get("auction") or {}
             premium = (auc.get("buyerPremiumRate") or 0) / 100 or costs["buyer_premium_default"]
             next_bid = float(st.get("minBid") or 0) or high + 1
+            pic = lot.get("featuredPicture") or {}
             rows.append({
                 "keyword": kw,
                 "zone": zone["name"],
                 "id": lid,
                 "lead": (lot.get("lead") or "").strip(),
+                "description": (lot.get("description") or "").strip()[:1000],
+                "picture": pic.get("fullSizeLocation") or pic.get("thumbnailLocation"),
                 "high_bid": high,
                 "next_bid": next_bid,
                 "all_in_next": all_in_cost(next_bid, premium, costs["hst"]),
