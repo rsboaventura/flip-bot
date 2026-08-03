@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from scan import load_config, scan, scan_shopping  # noqa: E402
+from src.comps import comps_summary  # noqa: E402
 from src.report_html import render_email_html  # noqa: E402
 
 
@@ -76,7 +77,16 @@ def main() -> None:
     # e-mail so com lote vivo e com pelo menos 10 min de jogo
     rows = [r for r in rows if (r["time_left_s"] or 0) > 600]
     shopping_rows = [r for r in shopping_rows if (r["time_left_s"] or 0) > 600]
-    html = render_email_html(cfg, rows, shopping_rows)
+
+    print("Termometro Kijiji (Niagara)...", file=sys.stderr)
+    comps = []
+    for kw in cfg["search"]["keywords"]:
+        try:
+            comps.append(comps_summary(kw))
+        except Exception as e:
+            print(f"  !! comps '{kw}': {e}", file=sys.stderr)
+
+    html = render_email_html(cfg, rows, shopping_rows, comps=comps)
 
     out_dir = ROOT / cfg["report"]["output_dir"]
     out_dir.mkdir(exist_ok=True)
@@ -84,7 +94,7 @@ def main() -> None:
     out = out_dir / f"garimpo-{stamp}.html"
     out.write_text(html)
     (out_dir / f"garimpo-{stamp}.json").write_text(
-        json.dumps({"rows": rows, "shopping": shopping_rows},
+        json.dumps({"rows": rows, "shopping": shopping_rows, "comps": comps},
                    ensure_ascii=False))
     print(f"HTML salvo: {out}", file=sys.stderr)
 

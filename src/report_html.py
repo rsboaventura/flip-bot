@@ -41,7 +41,8 @@ TH = ("padding:8px 9px;font-size:11px;letter-spacing:.05em;text-transform:upperc
 
 def render_email_html(cfg: dict, rows: list[dict],
                       shopping_rows: list[dict],
-                      max_rows: int = 40) -> str:
+                      max_rows: int = 40,
+                      comps: list[dict] | None = None) -> str:
     mult = cfg["costs"]["resale_multiple"]
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
     zonas = " · ".join(z["name"] for z in cfg["search"]["zones"])
@@ -102,6 +103,39 @@ def render_email_html(cfg: dict, rows: list[dict],
   {"".join(trs)}
 </table>"""
 
+    def comps_table(cs: list[dict] | None) -> str:
+        if not cs:
+            return ""
+        trs = []
+        for i, c in enumerate(cs):
+            if not c.get("median"):
+                continue
+            trs.append(f"""
+<tr style="{_row_style(i)}">
+  <td style="{TD}"><b>{c["query"]}</b></td>
+  <td style="{TD}text-align:right;"><b>${c["median"]:.0f}</b></td>
+  <td style="{TD}text-align:right;color:{MUTED};">${c["low"]:.0f}–${c["high"]:.0f}</td>
+  <td style="{TD}text-align:right;">{c["count"]}</td>
+</tr>""")
+        if not trs:
+            return ""
+        return f"""
+  <div style="background:#ffffff;padding:0 24px 20px;">
+    <div style="font-size:16px;font-weight:700;color:{INK};margin:0 0 10px;">🌡️ Termômetro Kijiji (Niagara) — preço PEDIDO</div>
+<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border-radius:10px;overflow:hidden;">
+  <tr style="background:{VERDE};">
+    <th style="{TH}">Categoria</th>
+    <th style="{TH}text-align:right;">Mediana</th>
+    <th style="{TH}text-align:right;">Faixa</th>
+    <th style="{TH}text-align:right;">Anúncios</th>
+  </tr>
+  {"".join(trs)}
+</table>
+    <p style="font-size:12px;color:{MUTED};margin:10px 0 0;">Preço pedido ≠ preço vendido:
+    contar com ~15% de choro do comprador. Categoria com mediana baixa
+    (ex. item pequeno/acessório) não paga nem a viagem — pular.</p>
+  </div>"""
+
     return f"""<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#eef1f6;">
@@ -130,7 +164,7 @@ def render_email_html(cfg: dict, rows: list[dict],
     <p style="font-size:12px;color:{MUTED};margin:10px 0 0;">⚠️ Lance longe do fim ainda sobe — o custo mostrado é o de agora.
     Conferir se é o produto (não capa/peça) e NEW/SEALED vs USED.</p>
   </div>
-
+{comps_table(comps)}
   <div style="background:#10233f;border-radius:0 0 14px 14px;padding:16px 24px;color:#c9d8ee;font-size:12px;">
     <b style="color:#fff;">Como agir:</b> escolher lotes → definir teto no <code>watchlist.yaml</code> →
     rodar o watcher → dar o lance à mão quando ele avisar "HORA DO LANCE".

@@ -33,6 +33,7 @@ Família: Rogério (dev/lances), Luciana (retirada/logística).
 | Arquivo | Papel |
 |---|---|
 | `src/hibid.py` | Cliente GraphQL read-only (LotSearch, lotState, BidHistory) + `all_in_cost()` |
+| `src/comps.py` | Comps de revenda via Kijiji público (região Niagara, cards server-rendered por data-testid). FB Marketplace = login = fora dos limites. Preço PEDIDO ≠ vendido: ~15% de choro. Margens variam brutalmente por categoria (robot vacuum +3300%, dewalt leaf blower −31% em 02/08) — comps antes de todo lance |
 | `scripts/scan.py` | Garimpo semanal por keyword no raio de Mississauga → relatório md em `reports/` |
 | `scripts/watch.py` | Watcher dinâmico: polling adaptativo da watchlist, notificação macOS "HORA DO LANCE" / "ESTOUROU O TETO" |
 | `config/flip.yaml` | Raio, keywords, custos (prêmio/HST/múltiplo), cadência do watcher, `shopping:` lista de compras da casa (keyword + preço Amazon → seção "economia doméstica" no relatório) |
