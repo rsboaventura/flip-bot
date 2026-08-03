@@ -40,7 +40,8 @@ ACCESSORY_RE = re.compile(
     r"|accessor|cover|case\b|holder|mount\b|bracket|adapter|cable|controller"
     r"|remote\b|filter|\bbag\b|belt\b|brush|\bbatter(y|ies)\b|pump\b|lock\b"
     r"|\blight\b|bell\b|seat\b|helmet|sticker|decal|strap|nozzle|hose|attachment"
-    r"|switch\b|dashboard|\bmotor\b|\bengine\b|ride.?on|handlebar|fender|kickstand",
+    r"|switch\b|dashboard|\bmotor\b|\bengine\b|ride.?on|handlebar|fender|kickstand"
+    r"|\bcord\b|extension|inlet|outlet|plug\b|socket",
     re.IGNORECASE,
 )
 
@@ -53,20 +54,28 @@ def _title_matches(keyword: str, lead: str) -> bool:
                for t in keyword.split())
 
 
-def annotate_profit(rows: list[dict], comps: list[dict], haircut: float) -> None:
+def annotate_profit(rows: list[dict], comps: list[dict], haircut: float,
+                    hst: float = 0.13, profit_multiple: float = 2.0) -> None:
     """Lucro estimado por lote via mediana Kijiji da keyword; acessorios e
-    titulos que nao batem com a keyword ficam sem estimativa. Ordena in-place
-    por lucro desc (sem estimativa no fim)."""
+    titulos que nao batem com a keyword ficam sem estimativa. Tambem calcula
+    max_bid_2x: o LANCE maximo p/ garantir lucro >= 100% (venda liquida >=
+    profit_multiple x custo real), ja descontando premio do leiloeiro + HST.
+    Ordena in-place por lucro desc (sem estimativa no fim)."""
     median_by_kw = {c["query"]: c["median"] for c in comps if c.get("median")}
     for r in rows:
         med = median_by_kw.get(r["keyword"])
         if (med and _title_matches(r["keyword"], r["lead"])
                 and not ACCESSORY_RE.search(r["lead"])):
+            premium = (r.get("premium_pct") or 16) / 100
+            resale_net = med * (1 - haircut)
             r["est_resale"] = med
-            r["est_profit"] = med * (1 - haircut) - r["all_in_next"]
+            r["est_profit"] = resale_net - r["all_in_next"]
+            r["max_bid_2x"] = (resale_net / profit_multiple
+                               / ((1 + premium) * (1 + hst)))
         else:
             r["est_resale"] = None
             r["est_profit"] = None
+            r["max_bid_2x"] = None
     rows.sort(key=lambda r: (r["est_profit"] is None, -(r["est_profit"] or 0)))
 
 
@@ -124,7 +133,9 @@ def main() -> None:
         except Exception as e:
             print(f"  !! comps '{kw}': {e}", file=sys.stderr)
 
-    annotate_profit(rows, comps, cfg["report"].get("haircut", 0.15))
+    annotate_profit(rows, comps, cfg["report"].get("haircut", 0.15),
+                    hst=cfg["costs"].get("hst", 0.13),
+                    profit_multiple=cfg["costs"].get("resale_multiple", 2.0))
 
     html = render_email_html(cfg, rows, shopping_rows, comps=comps)
 

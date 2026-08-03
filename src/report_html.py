@@ -9,6 +9,7 @@ from datetime import datetime
 AZUL = "#1d6fd8"
 LARANJA = "#d97706"
 VERDE = "#16a34a"
+VERMELHO = "#dc2626"
 INK = "#1f2937"
 MUTED = "#6b7280"
 
@@ -69,6 +70,18 @@ def render_email_html(cfg: dict, rows: list[dict],
             else:
                 lucro = (f'<td style="{TD}text-align:right;color:{VERDE};">'
                          f'<b>${r["all_in_next"] * mult:.0f}+</b></td>')
+            teto_cell = ""
+            if has_profit:
+                teto = r.get("max_bid_2x")
+                if teto is None:
+                    teto_cell = f'<td style="{TD}text-align:right;color:{MUTED};">—</td>'
+                elif r["high_bid"] > teto:
+                    teto_cell = (f'<td style="{TD}text-align:right;color:{VERMELHO};">'
+                                 f'<b>${teto:.0f}</b><br>'
+                                 f'<span style="font-size:11px;">já passou!</span></td>')
+                else:
+                    teto_cell = (f'<td style="{TD}text-align:right;">'
+                                 f'<b>${teto:.0f}</b></td>')
             trs.append(f"""
 <tr style="{_row_style(i)}">
   <td style="{TD}white-space:nowrap;"><b>{_fmt_time(r["time_left_s"])}</b></td>
@@ -76,8 +89,11 @@ def render_email_html(cfg: dict, rows: list[dict],
       <br><span style="color:{MUTED};font-size:11px;">{r["keyword"]} · {r["city"]} · {r["bid_count"]} lances</span></td>
   <td style="{TD}text-align:right;">${r["high_bid"]:.0f}</td>
   <td style="{TD}text-align:right;"><b>${r["all_in_next"]:.0f}</b></td>
+  {teto_cell}
   {lucro}
 </tr>""")
+        teto_th = (f'<th style="{TH}text-align:right;">Lance máx. (2×)</th>'
+                   if has_profit else "")
         last_col = "Lucro est." if has_profit else "Revender por"
         return f"""
 <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border-radius:10px;overflow:hidden;">
@@ -85,6 +101,7 @@ def render_email_html(cfg: dict, rows: list[dict],
     <th style="{TH}">Fim</th><th style="{TH}">Lote (clique p/ abrir)</th>
     <th style="{TH}text-align:right;">Lance</th>
     <th style="{TH}text-align:right;">Custo real</th>
+    {teto_th}
     <th style="{TH}text-align:right;">{last_col}</th>
   </tr>
   {"".join(trs)}
@@ -168,6 +185,10 @@ def render_email_html(cfg: dict, rows: list[dict],
   <div style="background:#ffffff;padding:0 24px 20px;">
     <div style="font-size:16px;font-weight:700;color:{INK};margin:0 0 10px;">💰 Oportunidades de revenda</div>
     {opp_table(rows)}
+    <p style="font-size:12px;color:{MUTED};margin:10px 0 0;"><b>Lance máx. (2×)</b> =
+    até onde dá para ir no lance e AINDA dobrar o dinheiro (já desconta prêmio
+    do leiloeiro, HST e {int(cfg["report"].get("haircut", 0.15) * 100)}% de choro
+    sobre o preço do Kijiji). É o número que vai no <code>max_bid</code> da watchlist.</p>
   </div>
 
   <div style="background:#ffffff;padding:0 24px 20px;">
