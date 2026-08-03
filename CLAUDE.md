@@ -35,7 +35,7 @@ Família: Rogério (dev/lances), Luciana (retirada/logística).
 | `src/hibid.py` | Cliente GraphQL read-only (LotSearch, lotState, BidHistory) + `all_in_cost()` |
 | `scripts/scan.py` | Garimpo semanal por keyword no raio de Mississauga → relatório md em `reports/` |
 | `scripts/watch.py` | Watcher dinâmico: polling adaptativo da watchlist, notificação macOS "HORA DO LANCE" / "ESTOUROU O TETO" |
-| `config/flip.yaml` | Raio, keywords, custos (prêmio/HST/múltiplo), cadência do watcher |
+| `config/flip.yaml` | Raio, keywords, custos (prêmio/HST/múltiplo), cadência do watcher, `shopping:` lista de compras da casa (keyword + preço Amazon → seção "economia doméstica" no relatório) |
 | `config/watchlist.yaml` | Lotes vigiados: id + max_bid (+ resale_estimate) |
 
 ## Fluxo semanal

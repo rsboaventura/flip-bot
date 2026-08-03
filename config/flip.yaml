@@ -22,6 +22,24 @@ search:
     - "shop vac"
     - lego
 
+# Lista de compras da casa — produtos que voces JA compram na Amazon.
+# O scan compara o custo real do leilao com o preco da Amazon e lista os que
+# saem por <= max_fraction do preco (default: metade). Editar a vontade:
+# keyword = termo de busca no HiBid; amazon_price = preco em CAD na Amazon.
+shopping:
+  max_fraction: 0.5
+  items:
+    - keyword: "air fryer"
+      amazon_price: 120
+    - keyword: "instant pot"
+      amazon_price: 130
+    - keyword: "coffee maker"
+      amazon_price: 100
+    - keyword: "robot vacuum"
+      amazon_price: 300
+    - keyword: "office chair"
+      amazon_price: 250
+
 costs:
   buyer_premium_default: 0.16   # usado quando o leiloeiro nao informa (14-17% tipico)
   hst: 0.13                     # Ontario
