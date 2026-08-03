@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flip-Bot — Como Funciona (Robô × Humanos)</title>
+<style>
+  :root {
+    --robo: #1d6fd8;
+    --robo-bg: #e8f1fc;
+    --humano: #d97706;
+    --humano-bg: #fdf1e0;
+    --ok: #16a34a;
+    --alerta: #dc2626;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --bg: #f4f6fa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.55;
+    padding: 1rem; max-width: 780px; margin: 0 auto;
+  }
+  header { text-align: center; padding: 1.2rem 0 .6rem; }
+  header h1 { font-size: 1.55rem; }
+  header p.sub { color: var(--muted); margin-top: .3rem; font-size: .95rem; }
+
+  .legenda {
+    display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap;
+    margin: 1rem 0 1.4rem;
+  }
+  .legenda span {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .35rem .8rem; border-radius: 999px; font-size: .85rem; font-weight: 600;
+  }
+  .leg-robo { background: var(--robo-bg); color: var(--robo); border: 2px solid var(--robo); }
+  .leg-humano { background: var(--humano-bg); color: var(--humano); border: 2px solid var(--humano); }
+
+  .etapa {
+    background: var(--card); border-radius: 14px; padding: 1rem 1.1rem;
+    margin-bottom: 0; box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    border-left: 6px solid;
+  }
+  .etapa.robo { border-color: var(--robo); }
+  .etapa.humano { border-color: var(--humano); }
+  .etapa .quem {
+    font-size: .75rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; margin-bottom: .25rem;
+  }
+  .etapa.robo .quem { color: var(--robo); }
+  .etapa.humano .quem { color: var(--humano); }
+  .etapa h2 { font-size: 1.05rem; margin-bottom: .3rem; }
+  .etapa p { font-size: .92rem; color: #374151; }
+  .etapa .dica { margin-top: .45rem; font-size: .85rem; color: var(--muted); }
+  .etapa code {
+    background: #eef2f7; padding: .1rem .35rem; border-radius: 5px;
+    font-size: .82em;
+  }
+  .seta {
+    text-align: center; font-size: 1.3rem; color: #9ca3af;
+    padding: .25rem 0; line-height: 1;
+  }
+
+  .alertas { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin: .6rem 0; }
+  @media (max-width: 560px) { .alertas { grid-template-columns: 1fr; } }
+  .alerta-card {
+    border-radius: 12px; padding: .8rem .9rem; font-size: .88rem;
+    border: 2px solid;
+  }
+  .alerta-card.verde { border-color: var(--ok); background: #eafaf0; }
+  .alerta-card.vermelho { border-color: var(--alerta); background: #fdecec; }
+  .alerta-card strong { display: block; margin-bottom: .2rem; }
+
+  .conta {
+    background: #10233f; color: #e5edf8; border-radius: 14px;
+    padding: 1.1rem 1.2rem; margin: 1.6rem 0;
+  }
+  .conta h2 { font-size: 1.05rem; margin-bottom: .5rem; color: #fff; }
+  .conta .formula {
+    background: rgba(255,255,255,.09); border-radius: 9px; padding: .7rem .9rem;
+    font-family: "SF Mono", Menlo, monospace; font-size: .86rem; margin: .5rem 0;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .conta p { font-size: .9rem; }
+  .conta .ex { color: #9fc3ef; font-size: .85rem; margin-top: .5rem; }
+
+  .casa {
+    background: var(--card); border-radius: 14px; padding: 1rem 1.1rem;
+    margin: 1.4rem 0; border: 2px dashed #a3b3c9;
+  }
+  .casa h2 { font-size: 1.05rem; margin-bottom: .35rem; }
+  .casa p { font-size: .9rem; color: #374151; }
+
+  .regras { margin: 1.4rem 0; }
+  .regras h2 { font-size: 1.1rem; margin-bottom: .6rem; text-align: center; }
+  .regras ul { list-style: none; }
+  .regras li {
+    background: var(--card); border-radius: 10px; padding: .65rem .9rem;
+    margin-bottom: .5rem; font-size: .9rem; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .regras li::before { content: "🔒 "; }
+
+  footer {
+    text-align: center; color: var(--muted); font-size: .8rem;
+    margin: 1.8rem 0 .8rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔨 Flip-Bot — Como Funciona</h1>
+  <p class="sub">Comprar barato em leilão (HiBid Ontario) · revender com lucro em Niagara<br>
+  Cada semana, um ciclo. O robô garimpa e avisa — <strong>as decisões e o lance são sempre nossos.</strong></p>
+</header>
+
+<div class="legenda">
+  <span class="leg-robo">🤖 ROBÔ — automático</span>
+  <span class="leg-humano">👤 HUMANO — manual</span>
+</div>
+
+<div class="etapa robo">
+  <div class="quem">🤖 Robô · quinta/sexta</div>
+  <h2>1. Garimpo semanal</h2>
+  <p>O robô varre os leilões públicos do HiBid num raio de <strong>25 milhas de Mississauga</strong>
+  (perto do storage) e monta um relatório: ferramentas Milwaukee/DeWalt, Dyson,
+  eletros… tudo que fecha antes da viagem da Luciana, ordenado por urgência.</p>
+  <p class="dica">Comando: <code>scan.py</code> → relatório em <code>reports/</code>. Sem login, só leitura pública.</p>
+</div>
+<div class="seta">⬇️</div>
+
+<div class="etapa humano">
+  <div class="quem">👤 Rogério · 15 min</div>
+  <h2>2. Escolher os lotes e definir o TETO</h2>
+  <p>Abrir o relatório, clicar nos links, conferir se é o <strong>produto de verdade</strong>
+  (não capa/peça/acessório) e se é <strong>NEW/SEALED</strong> ou usado. Para cada lote bom,
+  definir o <strong>lance máximo (teto)</strong> ANTES do leilão esquentar — e anotar no
+  <code>watchlist.yaml</code>.</p>
+  <p class="dica">O teto é sagrado: é ele que garante o lucro. Leilão dá adrenalina — o teto é o freio.</p>
+</div>
+<div class="seta">⬇️</div>
+
+<div class="etapa robo">
+  <div class="quem">🤖 Robô · tempo real</div>
+  <h2>3. Vigia dinâmica (watcher)</h2>
+  <p>O robô fica de olho em cada lote vigiado: consulta o lance atual e o cronômetro
+  — de leve quando falta muito, a cada 15 segundos na reta final. Quando chega a hora,
+  ele <strong>toca um alerta no Mac</strong>:</p>
+  <div class="alertas">
+    <div class="alerta-card verde">
+      <strong>🔔 HORA DO LANCE</strong>
+      Faltam ~5 min e o preço ainda está dentro do teto. Abrir o link e dar o lance!
+    </div>
+    <div class="alerta-card vermelho">
+      <strong>🛑 ESTOUROU O TETO</strong>
+      O preço passou do máximo. Soltar o lote sem dó — semana que vem tem outro.
+    </div>
+  </div>
+  <p class="dica">Por que 5 min e não no último segundo? O HiBid usa <em>soft close</em>:
+  lance no finalzinho <strong>estende o relógio</strong>. Não existe "snipe" — existe disciplina.</p>
+</div>
+<div class="seta">⬇️</div>
+
+<div class="etapa humano">
+  <div class="quem">👤 Rogério · na hora do alerta</div>
+  <h2>4. Dar o lance (à mão, na nossa conta)</h2>
+  <p>Abrir o link do alerta, conferir o preço e dar o lance <strong>manualmente</strong> no site.
+  O robô <em>nunca</em> dá lance nem entra na conta — isso protege a conta e cumpre as regras do site.</p>
+</div>
+<div class="seta">⬇️</div>
+
+<div class="etapa humano">
+  <div class="quem">👤 Luciana · viagem semanal</div>
+  <h2>5. Retirar na rota Mississauga → Niagara</h2>
+  <p>Ganhou? O lote entra na lista de retirada da semana. Como os leilões escolhidos ficam
+  no caminho do storage (Mississauga, Oakville, Etobicoke…), a retirada entra na viagem
+  que já acontece — custo de transporte ≈ zero.</p>
+  <p class="dica">Levar o e-mail de confirmação e documento. Conferir o item NA RETIRADA (é devolução de loja!).</p>
+</div>
+<div class="seta">⬇️</div>
+
+<div class="etapa humano">
+  <div class="quem">👤 Família · durante a semana</div>
+  <h2>6. Anunciar e vender em Niagara</h2>
+  <p>Foto caprichada, preço de mercado, anúncio no <strong>Facebook Marketplace</strong> e Kijiji.
+  Responder rápido as mensagens é o que faz girar. Encontro em lugar público, dinheiro ou e-transfer.</p>
+</div>
+<div class="seta">⬇️</div>
+
+<div class="etapa robo">
+  <div class="quem">🤖 + 👤 · fim do ciclo</div>
+  <h2>7. Registrar e aprender</h2>
+  <p>Anotar: quanto pagou, quanto vendeu, quantos dias demorou. Em poucas semanas
+  saberemos <strong>o que gira em Niagara</strong> e o que encalha — e o garimpo fica cada vez mais certeiro.</p>
+</div>
+
+<div class="conta">
+  <h2>💰 A conta que decide tudo</h2>
+  <p>O lance <strong>não</strong> é o custo. Em cima dele vêm a taxa do leiloeiro (14–17%) e o HST (13%):</p>
+  <div class="formula">custo real = lance × ~1,30</div>
+  <p>E só vale comprar se dá para revender pelo <strong>dobro</strong> do custo real
+  (porque parte dos itens de devolução vem com defeito e há tempo de venda):</p>
+  <div class="formula">só compra se: preço de revenda ≥ 2 × custo real</div>
+  <p class="ex">Exemplo: lance $40 → custo real ~$52 → só vale se revende por $104+.
+  O Dyson Cool de $280 da Amazon a $42 de lance? Custo ~$55, revenda ~$150 → ✅ vale.</p>
+</div>
+
+<div class="casa">
+  <h2>🏠 Bônus: lista de compras da casa</h2>
+  <p>O mesmo garimpo vigia produtos que <strong>já compraríamos na Amazon</strong>
+  (cadastrados com o preço que pagamos). Se aparecer em leilão por <strong>metade ou menos</strong>,
+  entra no relatório como "economia doméstica". Comprar mais barato o que já se compraria
+  é lucro do mesmo jeito — sem precisar revender.</p>
+</div>
+
+<div class="regras">
+  <h2>Regras de ouro</h2>
+  <ul>
+    <li><strong>Lance é sempre humano.</strong> O robô só pesquisa e avisa — nunca entra na conta, nunca dá lance.</li>
+    <li><strong>Teto definido ANTES, respeitado SEMPRE.</strong> Estourou → soltou. Disciplina é o lucro.</li>
+    <li><strong>Custo real = lance × 1,30.</strong> Fazer a conta antes de se apaixonar pelo item.</li>
+    <li><strong>Piloto pequeno primeiro:</strong> ~CA$300 de budget, meta honesta de CA$1.500–3.000/mês. Escalar só depois que a margem se provar.</li>
+    <li><strong>É devolução de loja:</strong> 10–30% vem com defeito. Conferir na retirada e embutir isso no preço.</li>
+  </ul>
+</div>
+
+<footer>
+  flip-bot · spin-off do robô da Etsy · Craft3DPrintCanada — Niagara Falls, ON<br>
+  Detalhes técnicos: CLAUDE.md do repositório
+</footer>
+
+</body>
+</html>
