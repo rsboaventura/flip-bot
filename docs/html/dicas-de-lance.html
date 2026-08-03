@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flip-Bot — Dicas de Lance e Linha do Tempo</title>
+<style>
+  :root {
+    --robo: #1d6fd8; --robo-bg: #e8f1fc;
+    --humano: #d97706; --humano-bg: #fdf1e0;
+    --ok: #16a34a; --alerta: #dc2626;
+    --ink: #1f2937; --muted: #6b7280;
+    --card: #ffffff; --bg: #f4f6fa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.55;
+    padding: 1rem; max-width: 780px; margin: 0 auto;
+  }
+  header { text-align: center; padding: 1.2rem 0 .8rem; }
+  header h1 { font-size: 1.5rem; }
+  header p.sub { color: var(--muted); margin-top: .3rem; font-size: .95rem; }
+  header a { color: var(--robo); font-size: .85rem; }
+
+  h2.secao { font-size: 1.15rem; margin: 1.6rem 0 .8rem; text-align: center; }
+
+  /* Linha do tempo do ciclo */
+  .timeline { position: relative; margin: 0 0 1rem; padding-left: 26px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 9px; top: 6px; bottom: 6px;
+    width: 4px; border-radius: 2px;
+    background: linear-gradient(var(--robo), var(--humano), var(--alerta), var(--ok));
+  }
+  .tl-item { position: relative; margin-bottom: 1rem; }
+  .tl-item::before {
+    content: ""; position: absolute; left: -24px; top: .45rem;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--card); border: 4px solid var(--dot, var(--robo));
+  }
+  .tl-item .quando {
+    font-size: .75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--dot, var(--robo));
+  }
+  .tl-item .card {
+    background: var(--card); border-radius: 12px; padding: .8rem 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-top: .25rem; font-size: .92rem;
+  }
+  .tl-item code { background: #eef2f7; padding: .1rem .35rem; border-radius: 5px; font-size: .82em; }
+
+  /* Relógio da reta final */
+  .reta {
+    background: #10233f; color: #dbe7f7; border-radius: 14px;
+    padding: 1.1rem 1.2rem; margin: 1rem 0;
+  }
+  .reta h3 { color: #fff; font-size: 1rem; margin-bottom: .7rem; }
+  .faixa { display: flex; border-radius: 9px; overflow: hidden; font-size: .72rem;
+           text-align: center; font-weight: 700; margin-bottom: .5rem; }
+  .faixa div { padding: .55rem .2rem; }
+  .f1 { flex: 3; background: #24405f; }
+  .f2 { flex: 2; background: #2c5a8c; }
+  .f3 { flex: 2; background: #b45309; }
+  .f4 { flex: 2; background: #15803d; }
+  .faixa-leg { display: flex; font-size: .72rem; color: #9fc3ef; }
+  .faixa-leg div { padding: 0 .2rem; }
+  .faixa-leg .f1 { background: none; } .faixa-leg .f2 { background: none; }
+  .faixa-leg .f3 { background: none; } .faixa-leg .f4 { background: none; }
+  .reta p { font-size: .85rem; margin-top: .6rem; }
+
+  /* Alertas */
+  .alertas { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin: .8rem 0; }
+  @media (max-width: 560px) { .alertas { grid-template-columns: 1fr; } }
+  .alerta-card { border-radius: 12px; padding: .85rem .95rem; font-size: .88rem; border: 2px solid; background: var(--card); }
+  .alerta-card.verde { border-color: var(--ok); background: #eafaf0; }
+  .alerta-card.vermelho { border-color: var(--alerta); background: #fdecec; }
+  .alerta-card strong { display: block; margin-bottom: .25rem; }
+  .alerta-card .como { font-size: .78rem; color: var(--muted); margin-top: .35rem; }
+
+  /* Dicas */
+  .dicas { counter-reset: dica; }
+  .dica {
+    background: var(--card); border-radius: 12px; padding: .85rem 1rem .85rem 3.1rem;
+    margin-bottom: .7rem; box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    position: relative; font-size: .92rem;
+  }
+  .dica::before {
+    counter-increment: dica; content: counter(dica);
+    position: absolute; left: .85rem; top: .8rem;
+    width: 1.7rem; height: 1.7rem; border-radius: 50%;
+    background: var(--humano-bg); color: var(--humano);
+    font-weight: 800; display: flex; align-items: center; justify-content: center;
+    font-size: .95rem;
+  }
+  .dica b.t { display: block; margin-bottom: .15rem; }
+  .dica .pq { color: var(--muted); font-size: .85rem; }
+
+  .softclose {
+    background: var(--card); border: 2px dashed #a3b3c9; border-radius: 14px;
+    padding: 1rem 1.1rem; margin: 1.2rem 0; font-size: .9rem;
+  }
+  .softclose h3 { font-size: 1rem; margin-bottom: .4rem; }
+  .sc-bar { display: flex; align-items: center; gap: .3rem; margin: .6rem 0; font-size: .75rem; font-weight: 700; }
+  .sc-seg { padding: .45rem .5rem; border-radius: 7px; color: #fff; text-align: center; }
+
+  footer { text-align: center; color: var(--muted); font-size: .8rem; margin: 1.8rem 0 .8rem; }
+  footer a { color: var(--robo); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⏱️ Dicas de Lance — a arte de ganhar no finalzinho</h1>
+  <p class="sub">Vocês perceberam certo: <strong>quanto mais para o final, melhor.</strong><br>
+  Esta página explica o porquê, o passo a passo do robô e como agir quando ele avisa.</p>
+  <p style="margin-top:.4rem;"><a href="fluxo-flip-bot.html">← ver o fluxo completo do processo</a></p>
+</header>
+
+<h2 class="secao">🗓️ Quando o robô roda e quando te chama</h2>
+
+<div class="timeline">
+  <div class="tl-item" style="--dot: var(--robo);">
+    <div class="quando">🤖 Qui/sex de manhã (garimpo)</div>
+    <div class="card">O robô varre <strong>~1.800 lotes</strong> nas 3 zonas da rota, consulta os preços
+    do Kijiji e manda o <strong>e-mail ranqueado por lucro</strong>, com a coluna
+    <strong>"Lance máx. (2×)"</strong> — o teto que dobra o dinheiro.</div>
+  </div>
+  <div class="tl-item" style="--dot: var(--humano);">
+    <div class="quando">👤 No mesmo dia (10-15 min)</div>
+    <div class="card">Rogério abre o e-mail, clica nos melhores lotes, confirma que é o
+    <strong>produto de verdade</strong> (não peça/capa; NEW vs USED) e copia o teto da coluna
+    para o <code>watchlist.yaml</code>. <strong>Nenhum lance ainda!</strong></div>
+  </div>
+  <div class="tl-item" style="--dot: var(--robo);">
+    <div class="quando">🤖 Daí até o fim do leilão (vigia)</div>
+    <div class="card">O watcher consulta cada lote vigiado: a cada <strong>5 min</strong> quando falta muito,
+    <strong>1 min</strong> na última hora, <strong>15 s</strong> nos últimos 10 minutos. Tu não precisas
+    olhar nada — o robô olha por ti.</div>
+  </div>
+  <div class="tl-item" style="--dot: var(--alerta);">
+    <div class="quando">🔔 Faltando ~5 minutos</div>
+    <div class="card">Se o preço ainda está <strong>dentro do teto</strong>, dispara o alerta
+    <strong>"HORA DO LANCE"</strong>: notificação no canto da tela do Mac + som de sino 🔔.
+    É a tua deixa — abre o link e age.</div>
+  </div>
+  <div class="tl-item" style="--dot: var(--ok);">
+    <div class="quando">👤 Os últimos minutos</div>
+    <div class="card">Tu dás o lance <strong>à mão, na nossa conta</strong> — de preferência o
+    <strong>lance máximo (proxy)</strong> no valor do teto e deixa o site brigar por ti em
+    incrementos. Ganhou dentro do teto = lucro garantido. Passou do teto = solta.</div>
+  </div>
+</div>
+
+<h2 class="secao">🔔 Os dois avisos (e o que fazer em cada um)</h2>
+<div class="alertas">
+  <div class="alerta-card verde">
+    <strong>🔨 HORA DO LANCE</strong>
+    Faltam ~5 min e o preço cabe no teto.
+    <div class="como"><b>Como chega:</b> notificação macOS + som Glass.<br>
+    <b>O que fazer:</b> abrir o link do lote → dar o lance máximo = teto → acompanhar até fechar.</div>
+  </div>
+  <div class="alerta-card vermelho">
+    <strong>🛑 ESTOUROU O TETO</strong>
+    O lance atual passou do teu máximo.
+    <div class="como"><b>Como chega:</b> notificação macOS + linha no terminal.<br>
+    <b>O que fazer:</b> nada! Soltar sem dó. Semana que vem tem outro igual — a disciplina É o lucro.</div>
+  </div>
+</div>
+
+<div class="reta">
+  <h3>⏰ O relógio da reta final (por que 5 minutos e não 5 segundos)</h3>
+  <div class="faixa">
+    <div class="f1">até 1h antes<br>observar</div>
+    <div class="f2">última hora<br>atenção</div>
+    <div class="f3">últimos 5 min<br>🔨 LANCE</div>
+    <div class="f4">soft close<br>defender teto</div>
+  </div>
+  <p>O HiBid usa <strong>soft close</strong>: qualquer lance nos minutos finais <strong>estica o
+  relógio</strong> (em geral +2 a 5 min). Ou seja: não existe "lance ninja no último segundo" —
+  quem tenta só reabre a disputa. A janela dos ~5 minutos finais é o equilíbrio perfeito:
+  tarde o bastante para ver o preço real, cedo o bastante para reagir com calma.</p>
+</div>
+
+<div class="softclose">
+  <h3>🎯 A tática que junta tudo: lance máximo (proxy) no valor do teto</h3>
+  Quando o robô avisar, em vez de dar lancezinho de $2 em $2, coloca de uma vez o
+  <strong>lance máximo = teto da coluna "Lance máx. (2×)"</strong>. O site guarda teu máximo em
+  segredo e cobre os outros automaticamente, no menor incremento necessário.
+  <div class="sc-bar">
+    <div class="sc-seg" style="background:#2c5a8c;flex:2;">outro dá $28</div>
+    <div class="sc-seg" style="background:#15803d;flex:2;">site cobre por ti: $30</div>
+    <div class="sc-seg" style="background:#2c5a8c;flex:2;">outro dá $35</div>
+    <div class="sc-seg" style="background:#15803d;flex:3;">site cobre: $37... até teu teto</div>
+  </div>
+  Se o soft close esticar o relógio, teu máximo continua defendendo sozinho — sem madrugada
+  acordado. E se alguém passar do teto? Deixou de ser negócio: o robô já avisou "estourou".
+</div>
+
+<h2 class="secao">🥇 As 8 dicas de ouro do lance</h2>
+<div class="dicas">
+  <div class="dica"><b class="t">Nunca dê lance cedo.</b>
+    <span class="pq">Lance cedo não "garante" nada — só sobe o preço, acorda os concorrentes e marca o lote como disputado. Vocês perceberam certo: <b>esperar o final ganha mais e mais barato.</b></span></div>
+  <div class="dica"><b class="t">Decida o teto ANTES, com a coluna "Lance máx. (2×)".</b>
+    <span class="pq">Frio, na planilha, sem leilão na tela. Na hora H só se executa — nunca se decide com adrenalina.</span></div>
+  <div class="dica"><b class="t">No aviso, dê o lance máximo (proxy) = teto, de uma vez.</b>
+    <span class="pq">O site briga por ti em incrementos e teu máximo fica secreto. Lancezinho picado só te faz de isca.</span></div>
+  <div class="dica"><b class="t">Estourou o teto? Soltou. Sem "só mais $5".</b>
+    <span class="pq">O "só mais $5" vira $20 — e $20 acima do teto é METADE do lucro do item. Devolução tem toda semana; teto furado não volta.</span></div>
+  <div class="dica"><b class="t">Perto do fim, olhe o nº de lances, não só o preço.</b>
+    <span class="pq">0-2 lances = ninguém viu = barganha provável. 15+ lances = disputa quente = provavelmente vai passar do teto; nem se apegue.</span></div>
+  <div class="dica"><b class="t">Lotes repetidos? Mire nos ÚLTIMOS da fila.</b>
+    <span class="pq">Quando o leilão tem 5 iguais (comum em devolução), os primeiros fecham mais caro. Os últimos fecham quando os concorrentes já compraram o deles.</span></div>
+  <div class="dica"><b class="t">Reta final é também o último check de qualidade.</b>
+    <span class="pq">Antes do lance: foto de novo (caixa aberta? peça faltando? AS-IS?), taxa do leiloeiro, endereço/horário de retirada. Depois de ganhar não tem choro.</span></div>
+  <div class="dica"><b class="t">Ganhou? Anota na hora. Perdeu? Anota também.</b>
+    <span class="pq">O preço final dos lotes perdidos ensina o robô (e nós) qual teto é realista em cada categoria. É o nosso "curso" mais barato.</span></div>
+</div>
+
+<footer>
+  flip-bot · <a href="fluxo-flip-bot.html">fluxo completo do processo</a> · o robô avisa, o humano decide 🤖+👤
+</footer>
+
+</body>
+</html>
