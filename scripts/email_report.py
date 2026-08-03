@@ -31,6 +31,44 @@ from scan import load_config, scan, scan_shopping  # noqa: E402
 from src.comps import comps_summary  # noqa: E402
 from src.report_html import render_email_html  # noqa: E402
 
+import re
+
+# Acessorio/peca nao vale a mediana da categoria (carregador de patinete nao
+# vale $1500). Sem estimativa de lucro -> vai pro fim do ranking, mas fica.
+ACCESSORY_RE = re.compile(
+    r"charger|tire|tyre|inner tube|replacement|compatible|repair|part\b|parts\b"
+    r"|accessor|cover|case\b|holder|mount\b|bracket|adapter|cable|controller"
+    r"|remote\b|filter|\bbag\b|belt\b|brush|\bbatter(y|ies)\b|pump\b|lock\b"
+    r"|\blight\b|bell\b|seat\b|helmet|sticker|decal|strap|nozzle|hose|attachment"
+    r"|switch\b|dashboard|\bmotor\b|\bengine\b|ride.?on|handlebar|fender|kickstand",
+    re.IGNORECASE,
+)
+
+
+def _title_matches(keyword: str, lead: str) -> bool:
+    """HiBid busca full-text (descricao inclusa) e por radical — 'generator'
+    acha 'Generation'/'Generic'. So estima lucro se TODAS as palavras da
+    keyword aparecem inteiras no titulo."""
+    return all(re.search(rf"\b{re.escape(t)}s?\b", lead, re.IGNORECASE)
+               for t in keyword.split())
+
+
+def annotate_profit(rows: list[dict], comps: list[dict], haircut: float) -> None:
+    """Lucro estimado por lote via mediana Kijiji da keyword; acessorios e
+    titulos que nao batem com a keyword ficam sem estimativa. Ordena in-place
+    por lucro desc (sem estimativa no fim)."""
+    median_by_kw = {c["query"]: c["median"] for c in comps if c.get("median")}
+    for r in rows:
+        med = median_by_kw.get(r["keyword"])
+        if (med and _title_matches(r["keyword"], r["lead"])
+                and not ACCESSORY_RE.search(r["lead"])):
+            r["est_resale"] = med
+            r["est_profit"] = med * (1 - haircut) - r["all_in_next"]
+        else:
+            r["est_resale"] = None
+            r["est_profit"] = None
+    rows.sort(key=lambda r: (r["est_profit"] is None, -(r["est_profit"] or 0)))
+
 
 def load_env() -> dict:
     env = {}
@@ -86,16 +124,7 @@ def main() -> None:
         except Exception as e:
             print(f"  !! comps '{kw}': {e}", file=sys.stderr)
 
-    # Ranking por lucro estimado: mediana do Kijiji da keyword (com choro)
-    # menos o custo real de agora. Estimativa de CATEGORIA — o humano confere
-    # se o lote e o produto mesmo antes de definir teto.
-    haircut = cfg["report"].get("haircut", 0.15)
-    median_by_kw = {c["query"]: c["median"] for c in comps if c.get("median")}
-    for r in rows:
-        med = median_by_kw.get(r["keyword"])
-        r["est_resale"] = med
-        r["est_profit"] = (med * (1 - haircut) - r["all_in_next"]) if med else None
-    rows.sort(key=lambda r: (r["est_profit"] is None, -(r["est_profit"] or 0)))
+    annotate_profit(rows, comps, cfg["report"].get("haircut", 0.15))
 
     html = render_email_html(cfg, rows, shopping_rows, comps=comps)
 
