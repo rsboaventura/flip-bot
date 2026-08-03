@@ -86,6 +86,17 @@ def main() -> None:
         except Exception as e:
             print(f"  !! comps '{kw}': {e}", file=sys.stderr)
 
+    # Ranking por lucro estimado: mediana do Kijiji da keyword (com choro)
+    # menos o custo real de agora. Estimativa de CATEGORIA — o humano confere
+    # se o lote e o produto mesmo antes de definir teto.
+    haircut = cfg["report"].get("haircut", 0.15)
+    median_by_kw = {c["query"]: c["median"] for c in comps if c.get("median")}
+    for r in rows:
+        med = median_by_kw.get(r["keyword"])
+        r["est_resale"] = med
+        r["est_profit"] = (med * (1 - haircut) - r["all_in_next"]) if med else None
+    rows.sort(key=lambda r: (r["est_profit"] is None, -(r["est_profit"] or 0)))
+
     html = render_email_html(cfg, rows, shopping_rows, comps=comps)
 
     out_dir = ROOT / cfg["report"]["output_dir"]

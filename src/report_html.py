@@ -48,32 +48,44 @@ def render_email_html(cfg: dict, rows: list[dict],
     zonas = " · ".join(z["name"] for z in cfg["search"]["zones"])
     total = len(rows)
     rows = rows[:max_rows]
+    ordem = ("maior lucro estimado" if any(
+        r.get("est_profit") is not None for r in rows) else "mais urgentes")
     resumo = (f"{total} oportunidades" if total <= max_rows
-              else f"top {max_rows} de {total} oportunidades (mais urgentes)")
+              else f"top {max_rows} de {total} oportunidades ({ordem})")
 
     def opp_table(rs: list[dict]) -> str:
         if not rs:
             return (f'<p style="color:{MUTED};font-size:14px;">'
                     'Nenhuma oportunidade nesta rodada.</p>')
+        has_profit = any(r.get("est_profit") is not None for r in rs)
         trs = []
         for i, r in enumerate(rs):
             lead = r["lead"][:70]
+            if r.get("est_profit") is not None:
+                lucro = (f'<td style="{TD}text-align:right;color:{VERDE};">'
+                         f'<b>${r["est_profit"]:.0f}</b>'
+                         f'<br><span style="color:{MUTED};font-size:11px;">'
+                         f'vende ~${r["est_resale"]:.0f}</span></td>')
+            else:
+                lucro = (f'<td style="{TD}text-align:right;color:{VERDE};">'
+                         f'<b>${r["all_in_next"] * mult:.0f}+</b></td>')
             trs.append(f"""
 <tr style="{_row_style(i)}">
   <td style="{TD}white-space:nowrap;"><b>{_fmt_time(r["time_left_s"])}</b></td>
   <td style="{TD}"><a href="{r["url"]}" style="color:{AZUL};text-decoration:none;"><b>{lead}</b></a>
-      <br><span style="color:{MUTED};font-size:11px;">{r["city"]} · {r.get("zone", "")} · {r["bid_count"]} lances</span></td>
+      <br><span style="color:{MUTED};font-size:11px;">{r["keyword"]} · {r["city"]} · {r["bid_count"]} lances</span></td>
   <td style="{TD}text-align:right;">${r["high_bid"]:.0f}</td>
   <td style="{TD}text-align:right;"><b>${r["all_in_next"]:.0f}</b></td>
-  <td style="{TD}text-align:right;color:{VERDE};"><b>${r["all_in_next"] * mult:.0f}+</b></td>
+  {lucro}
 </tr>""")
+        last_col = "Lucro est." if has_profit else "Revender por"
         return f"""
 <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border-radius:10px;overflow:hidden;">
   <tr style="background:{AZUL};">
     <th style="{TH}">Fim</th><th style="{TH}">Lote (clique p/ abrir)</th>
     <th style="{TH}text-align:right;">Lance</th>
     <th style="{TH}text-align:right;">Custo real</th>
-    <th style="{TH}text-align:right;">Revender por</th>
+    <th style="{TH}text-align:right;">{last_col}</th>
   </tr>
   {"".join(trs)}
 </table>"""

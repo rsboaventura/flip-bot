@@ -18,21 +18,70 @@ search:
       zip: "L2G 3Y4"
       miles: 20
 
-  # Palavras-chave de tiquete alto que giram bem no Facebook Marketplace de
-  # Niagara. Ajustar conforme o ledger de vendas ensinar o que gira.
+  # ~50 categorias compraveis por <= ~$100 que revendem por MUITO mais no
+  # Marketplace. O ranking de lucro cruza cada lote com a mediana do Kijiji
+  # da mesma keyword. Ajustar conforme o ledger ensinar o que gira.
+  # CUIDADO em devolucao: Apple/AirPods/sneakers tem MUITO falso; conferir foto.
   keywords:
+    # ferramentas
     - milwaukee
     - dewalt
     - makita
+    - ryobi
+    - "tool set"
+    # aspiradores (campea do double-check 02/08: +3300%)
     - dyson
+    - "robot vacuum"
+    - "shark vacuum"
+    - "cordless vacuum"
+    # beleza (aparelhos, nao cosmetico usado)
+    - "dyson airwrap"
+    - "hair dryer"
+    - "hair straightener"
+    - "massage gun"
+    - "electric toothbrush"
+    - waterpik
+    # cozinha
     - kitchenaid
+    - "instant pot"
     - "air fryer"
+    - "espresso machine"
+    - nespresso
+    - vitamix
+    - "ninja blender"
+    - "stand mixer"
+    # casa/jardim
     - "pressure washer"
     - generator
     - "shop vac"
+    - dehumidifier
+    - "air purifier"
+    - "patio heater"
+    # bebe (NUNCA car seat usado — norma/validade)
+    - stroller
+    - "baby monitor"
+    - "high chair"
+    # games/eletronicos
+    - nintendo
+    - playstation
+    - xbox
+    - "bluetooth speaker"
+    - jbl
+    - bose
+    - "sony headphones"
+    - gopro
+    - drone
+    - "apple watch"
+    - airpods
+    - tablet
+    # esporte/lazer
+    - "exercise bike"
+    - "electric scooter"
+    - "camping tent"
+    - kayak
+    # brinquedos/colecionaveis
     - lego
-    # Tenis/sneakers de marca — flip classico no Marketplace. CONFERIR na
-    # foto: tamanho, par completo, sinal de uso e AUTENTICIDADE (tem falso!)
+    # tenis de marca
     - "nike shoes"
     - "air jordan"
     - "adidas shoes"
@@ -64,7 +113,9 @@ costs:
 
 report:
   # Lotes com lance atual acima disso nem entram no relatorio (foco em barganha)
-  max_current_bid: 150
+  max_current_bid: 100
+  # Desconto sobre o preco pedido no Kijiji p/ estimar venda real (choro)
+  haircut: 0.15
   # So listar lotes que fecham nos proximos N dias (casar com o dia da viagem)
   closing_within_days: 7
   output_dir: reports
