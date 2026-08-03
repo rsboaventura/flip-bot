@@ -40,10 +40,15 @@ TH = ("padding:8px 9px;font-size:11px;letter-spacing:.05em;text-transform:upperc
 
 
 def render_email_html(cfg: dict, rows: list[dict],
-                      shopping_rows: list[dict]) -> str:
+                      shopping_rows: list[dict],
+                      max_rows: int = 40) -> str:
     mult = cfg["costs"]["resale_multiple"]
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
     zonas = " · ".join(z["name"] for z in cfg["search"]["zones"])
+    total = len(rows)
+    rows = rows[:max_rows]
+    resumo = (f"{total} oportunidades" if total <= max_rows
+              else f"top {max_rows} de {total} oportunidades (mais urgentes)")
 
     def opp_table(rs: list[dict]) -> str:
         if not rs:
@@ -109,7 +114,7 @@ def render_email_html(cfg: dict, rows: list[dict],
 
   <div style="background:#ffffff;padding:20px 24px;">
     <p style="font-size:14px;color:{INK};margin:0 0 6px;">
-      <b>{len(rows)} oportunidades de revenda</b> na rota da Luciana.
+      <b>{resumo}</b> na rota da Luciana.
       <span style="color:{MUTED};">Custo real = próximo lance + taxa do leiloeiro + HST.
       Só vale se revender por <b>{mult:g}×</b> o custo real.</span></p>
   </div>

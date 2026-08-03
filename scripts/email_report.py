@@ -15,6 +15,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import json
 import smtplib
 import sys
 from datetime import datetime
@@ -72,12 +73,19 @@ def main() -> None:
     print("Garimpando (revenda + lista da casa)...", file=sys.stderr)
     rows = scan(cfg, cfg["search"]["keywords"], cfg["report"]["max_current_bid"])
     shopping_rows = scan_shopping(cfg)
+    # e-mail so com lote vivo e com pelo menos 10 min de jogo
+    rows = [r for r in rows if (r["time_left_s"] or 0) > 600]
+    shopping_rows = [r for r in shopping_rows if (r["time_left_s"] or 0) > 600]
     html = render_email_html(cfg, rows, shopping_rows)
 
     out_dir = ROOT / cfg["report"]["output_dir"]
     out_dir.mkdir(exist_ok=True)
-    out = out_dir / f"garimpo-{datetime.now():%Y-%m-%d-%H%M}.html"
+    stamp = f"{datetime.now():%Y-%m-%d-%H%M}"
+    out = out_dir / f"garimpo-{stamp}.html"
     out.write_text(html)
+    (out_dir / f"garimpo-{stamp}.json").write_text(
+        json.dumps({"rows": rows, "shopping": shopping_rows},
+                   ensure_ascii=False))
     print(f"HTML salvo: {out}", file=sys.stderr)
 
     if args.no_send:
