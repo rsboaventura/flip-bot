@@ -44,6 +44,10 @@ def fmt_time_left(seconds) -> str:
     return f"{m}m"
 
 
+def zones(cfg: dict) -> list[dict]:
+    return cfg["search"]["zones"]
+
+
 def scan(cfg: dict, keywords: list[str], max_bid_filter: float) -> list[dict]:
     client = HiBidClient()
     s = cfg["search"]
@@ -52,12 +56,13 @@ def scan(cfg: dict, keywords: list[str], max_bid_filter: float) -> list[dict]:
     seen: set[str] = set()
     rows: list[dict] = []
 
-    for kw in keywords:
+    for zone, kw in ((z, k) for z in zones(cfg) for k in keywords):
         page = client.search_lots(
-            search_text=kw, zip_code=s["zip"], miles=s["miles"],
+            search_text=kw, zip_code=zone["zip"], miles=zone["miles"],
             state=s["state"], country=s["country"], page_length=50,
         )
-        print(f"  [{kw}] {page['totalCount']} lotes no raio", file=sys.stderr)
+        print(f"  [{zone['name']} / {kw}] {page['totalCount']} lotes",
+              file=sys.stderr)
         for lot in page["results"]:
             lid = str(lot["id"])
             if lid in seen:
@@ -77,6 +82,7 @@ def scan(cfg: dict, keywords: list[str], max_bid_filter: float) -> list[dict]:
             next_bid = float(st.get("minBid") or 0) or high + 1
             rows.append({
                 "keyword": kw,
+                "zone": zone["name"],
                 "id": lid,
                 "lead": (lot.get("lead") or "").strip(),
                 "high_bid": high,
@@ -105,17 +111,23 @@ def scan_shopping(cfg: dict, client: HiBidClient | None = None) -> list[dict]:
     s = cfg["search"]
     costs = cfg["costs"]
     max_fraction = shopping.get("max_fraction", 0.5)
+    seen: set[str] = set()
     rows: list[dict] = []
 
-    for item in items:
+    for zone, item in ((z, i) for z in zones(cfg) for i in items):
         kw = item["keyword"]
         amazon = float(item["amazon_price"])
         page = client.search_lots(
-            search_text=kw, zip_code=s["zip"], miles=s["miles"],
+            search_text=kw, zip_code=zone["zip"], miles=zone["miles"],
             state=s["state"], country=s["country"], page_length=30,
         )
-        print(f"  [casa: {kw}] {page['totalCount']} lotes no raio", file=sys.stderr)
+        print(f"  [casa: {zone['name']} / {kw}] {page['totalCount']} lotes",
+              file=sys.stderr)
         for lot in page["results"]:
+            lid = str(lot["id"])
+            if lid in seen:
+                continue
+            seen.add(lid)
             st = lot.get("lotState") or {}
             if st.get("isClosed"):
                 continue
@@ -128,7 +140,8 @@ def scan_shopping(cfg: dict, client: HiBidClient | None = None) -> list[dict]:
                 continue
             rows.append({
                 "keyword": kw,
-                "id": str(lot["id"]),
+                "zone": zone["name"],
+                "id": lid,
                 "lead": (lot.get("lead") or "").strip(),
                 "high_bid": float(st.get("highBid") or 0),
                 "next_bid": next_bid,
@@ -144,14 +157,17 @@ def scan_shopping(cfg: dict, client: HiBidClient | None = None) -> list[dict]:
     return rows
 
 
+def zones_label(cfg: dict) -> str:
+    return " · ".join(f"{z['name']} ({z['miles']} mi)" for z in zones(cfg))
+
+
 def render_markdown(cfg: dict, rows: list[dict]) -> str:
-    s = cfg["search"]
     mult = cfg["costs"]["resale_multiple"]
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     lines = [
         f"# Garimpo HiBid — {now}",
         "",
-        f"Raio: {s['miles']} mi de {s['zip']} (Mississauga) · "
+        f"Zonas: {zones_label(cfg)} · "
         f"{len(rows)} oportunidades · lance atual <= "
         f"CA${cfg['report']['max_current_bid']}",
         "",

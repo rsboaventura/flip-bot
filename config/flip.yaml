@@ -2,11 +2,21 @@
 # Rota da Luciana: storage em Mississauga, viagem semanal p/ Niagara.
 
 search:
-  # Centro do raio de busca: Mississauga (perto do storage)
-  zip: "L4W 1S9"
-  miles: 25              # raio de retirada aceitavel a partir do zip
   state: "ON"            # SIGLA (a API nao aceita "Ontario" por extenso)
   country: "Canada"
+
+  # Zonas de retirada = rota semanal da Luciana (QEW: Mississauga -> Niagara).
+  # Cada zona e um centro (postal COM espaco) + raio em milhas.
+  zones:
+    - name: "Mississauga (storage)"
+      zip: "L4W 1S9"
+      miles: 20
+    - name: "Caminho QEW (Burlington/Hamilton)"
+      zip: "L8P 1A1"
+      miles: 15
+    - name: "Niagara (casa)"
+      zip: "L2G 3Y4"
+      miles: 20
 
   # Palavras-chave de tiquete alto que giram bem no Facebook Marketplace de
   # Niagara. Ajustar conforme o ledger de vendas ensinar o que gira.
@@ -21,6 +31,12 @@ search:
     - generator
     - "shop vac"
     - lego
+    # Tenis/sneakers de marca — flip classico no Marketplace. CONFERIR na
+    # foto: tamanho, par completo, sinal de uso e AUTENTICIDADE (tem falso!)
+    - "nike shoes"
+    - "air jordan"
+    - "adidas shoes"
+    - "new balance"
 
 # Lista de compras da casa — produtos que voces JA compram na Amazon.
 # O scan compara o custo real do leilao com o preco da Amazon e lista os que
